@@ -1,4 +1,4 @@
-# XY-Tree
+# Multiple-Columns-Tree
 A new solution for save hierarchical data (Tree structure) in Database
 一种新的树结构数据库存储方案
 
@@ -9,7 +9,7 @@ A new solution for save hierarchical data (Tree structure) in Database
 3)Closure Table：专门一张表维护Path，缺点是占用空间大，操作不直观。  
 4)Nested Sets：记录左值和右值，缺点是复杂难操作。  
 以上方法都存在一个共同缺点：操作不直观，不能直接看到树结构，不利于开发和调试。  
-本文介绍的方法我暂称它为“简单粗暴多列存储法”，它与Path Enumerations有点类似，但区别是用很多的数据库列来存储一个占位符(1或空值)，如下图(https://github.com/drinkjava2/XY-Tree/blob/master/treemapping.jpg) 左边的树结构，映射在数据库里的结构见右图表格：  
+本文介绍的方法我暂称它为“简单粗暴多列存储法”，它与Path Enumerations有点类似，但区别是用很多的数据库列来存储一个占位符(1或空值)，如下图(https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg) 左边的树结构，映射在数据库里的结构见右图表格：  
 ![image](treemapping.jpg)
 
 各种SQL操作如下：
