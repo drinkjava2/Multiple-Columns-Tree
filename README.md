@@ -14,7 +14,7 @@ A new solution for save hierarchical data (Tree structure) in Database
 
 各种SQL操作如下：
 ```
-1.Get a Note,用获取(或删除)指定节点下所有子节点，已知节点的行号为"X",列名"cY":
+1.获取(或删除)指定节点下所有子节点，已知节点的行号为"X",列名"cY":
 select *(or delete) from tb where 
   line>=X and line<(select min(line) from tb where line>X and  (cY=1 or c(Y-1)=1 or c(Y-2)=1 ... or c1=1))
 例如获取D节点及其所有子节点：
