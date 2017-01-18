@@ -15,7 +15,8 @@ A new solution for save hierarchical data (Tree structure) in Database
 各种SQL操作如下：
 ```
 1.Get a Note,用获取(或删除)指定节点下所有子节点，已知节点的行号为"X",列名"cY":
-select *(或delete) from tb where line>=X and line<(select min(line) from tb where line>X and  (cY=1 or c(Y-1)=1 or c(Y-2)=1 ... or c1=1))
+select *(or delete) from tb where 
+  line>=X and line<(select min(line) from tb where line>X and  (cY=1 or c(Y-1)=1 or c(Y-2)=1 ... or c1=1))
 例如获取D节点及其所有子节点：
 select * from tb where line>=7 and line< (select min(line) from tb where line>7 and (c2=1 or c1=1)) 
 删除D节点及其所有子节点：
@@ -47,12 +48,14 @@ union  select * from tb where line=(select max(line) from tb where line<12 and c
 视需求而定，例如在J和K之间插入一个新节点T：
 update tb set line=line+1 where line>=10;
 insert into tb (line,id,c4) values (10,'T',1)
-这是与Path Enumerations模式最大的区别，插入非常方便，只需要利用SQL将后面的所有行号加1即可，无须花很大精力维护path字串，不容易出错。
+这是与Path Enumerations模式最大的区别，插入非常方便，只需要利用SQL将后面的所有行号加1即可，无须花很大精力维护path字串，  
+不容易出错。
 另外如果表非常大，为了避免update tb set line=line+1 造成全表更新，影响性能，可以考虑增加
 一个GroupID字段，同一个根节点下的所有节点共用一个GroupID，所有操作均在groupID组内进行，例如插入新节点改为:
 update tb set line=line+1 where groupid=2 and line>=8;
 insert into tb (groupid,line,c4) values (2, 8,'T')
-因为一个groupid下的操作不会影响到其它groupid,对于复杂的增删改操作甚至可以在内存中完成操作后，一次性删除整个group的内容并重新插入一个新group即可。
+因为一个groupid下的操作不会影响到其它groupid,对于复杂的增删改操作甚至可以在内存中完成操作后，一次性删除整个group的内容  
+并重新插入一个新group即可。
 ```
 
 总结：  
@@ -67,4 +70,4 @@ insert into tb (groupid,line,c4) values (2, 8,'T')
 1)不是无限深度树，数据库最大允许列数有限制，通常最多为1000，这导致了树的深度不能超过1000，而且考虑到列数过多对性能也有影响, 使用时建议定一个比较小的深度限制例如100。
 2)SQL语句比较长，很多时候会出现c9=1 or c8=1  or c7=1 ... or c1=1这种n阶乘式的查询条件
 3)树的节点整体移动操作比较麻烦，需要将整个子树平移或上下称动，当节点须要经常移动时，不建议采用这种方案。对于一些只增减，不常移动节点的应用如论坛贴子和评论倒比较合适。
-4)列非常多时，空间占用有点大。
+4)列非常多时，空间占用有点大。  
