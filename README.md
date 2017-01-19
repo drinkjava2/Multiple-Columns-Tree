@@ -74,35 +74,44 @@ insert into tb (groupid,line,c4) values (2, 8,'T')
 
 #==重要: 以下为追加内容，是在前述基础上，一种更简单的无限深度树方案==
 突然发现上面的方法还是太笨了，如果不用多列而是只用一个列来存储深度等级，则可以不受数据库列数限制，从而进化为无限深度树，虽然不再具有所见即所得的效果，但是在性能和简单性上要远远超过上述“简单粗暴多列存储法”，暂时给它取名"朱氏深度树V2.0法"，方法如下：
-如下图(https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg)左边的树结构，映射在数据库里的结构见右图表格，注意每个表格的最后一行必须有一个END标记，level设为0： 
+如下图 (https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg) 左边的树结构，映射在数据库里的结构见右图表格，注意每个表格的最后一行必须有一个END标记，level设为0： 
 ![image](treemappingv2.png)
 ```
 1.获取指定节点下所有子节点，已知节点的行号为X,level为Y, groupID为Z
 select * from tb2 where groupID=Z and 
   line>=X and line<(select min(line) from tb where line>X and level<=Y and groupID=Z)
 例如获取D节点及其所有子节点：
-select * from tb2 where groupID=1 and line>=7 and line< (select min(line) from tb2 where groupid=1 and line>7 and level<=2)
+select * from tb2 where groupID=1 and 
+  line>=7 and line< (select min(line) from tb2 where groupid=1 and line>7 and level<=2)
 删除和获取相似，只要将sql中select * 换成delete即可。
 
 仅获取D节点的次级所有子节点：(查询条件加一个level=Y+1即可)：
-select * from tb2 where groupID=1 and line>=7 and level=3 and line< (select min(line) from tb2 where groupid=1 and line>7 and level<=2) 
+select * from tb2 where groupID=1 and 
+  line>=7 and level=3 and line< (select min(line) from tb2 where groupid=1 and line>7 and level<=2) 
 
 2.查询任意节点的根节点, 已知节点的groupid为Z
 select * from tb2 where groupID=Z and line=1 (或level=1) 
 
 3.查询指定节点的上一级父节点, 已知节点的行号为X,level为Y, groupID为Z
-select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-1))
+select * from tb2 where groupID=Z and 
+  line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-1))
 例如查L节点的上一级父节点：
-select * from tb2 where groupID=1 and line=(select max(line) from tb2 where groupID=1 and line<11 and level=3) 
+select * from tb2 where groupID=1 
+  and line=(select max(line) from tb2 where groupID=1 and line<11 and level=3) 
 
 3.查询指定节点的所有父节点, 已知节点的行号为"X",列名"cY":
-select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-1))
-union select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-2))
+select * from tb2 where groupID=Z and 
+  line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-1))
+union select * from tb2 where groupID=Z and 
+  line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-2))
 ...
-union select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=1)
+union select * from tb2 where groupID=Z and 
+  line=(select max(line) from tb2 where groupID=Z and line<X and level=1)
 例如查I节点的所有父节点：
-select * from tb2 where groupID=1 and line=(select max(line) from tb2 where groupID=1 and line<12 and level=2)
-union  select * from tb2 where groupID=1 and line=(select max(line) from tb2 where groupID=1 and line<12 and level=1)
+select * from tb2 where groupID=1 and 
+  line=(select max(line) from tb2 where groupID=1 and line<12 and level=2)
+union  select * from tb2 where groupID=1 and 
+  line=(select max(line) from tb2 where groupID=1 and line<12 and level=1)
 
 4.插入新节点：例如在J和K之间插入一个新节点T：
 update tb2 set line=line+1 where  groupID=1 and line>=10;
