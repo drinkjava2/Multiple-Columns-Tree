@@ -72,9 +72,9 @@ insert into tb (groupid,line,c4) values (2, 8,'T')
 3)树的节点整体移动操作比较麻烦，需要将整个子树平移或上下称动，当节点须要经常移动时，不建议采用这种方案。对于一些只增减，不常移动节点的应用如论坛贴子和评论倒比较合适。  
 4)列非常多时，空间占用有点大。  
 
-#==重要: 以下为追加内容，是在前述基础上，一种更简单的无限深度树方案==
+##以下为追加内容，是在前述基础上，一种更简单的无限深度树方案
 突然发现上面的方法还是太笨了，如果不用多列而是只用一个列来存储深度等级，则可以不受数据库列数限制，从而进化为无限深度树，虽然不再具有所见即所得的效果，但是在性能和简单性上要远远超过上述“简单粗暴多列存储法”，暂时给它取名"朱氏深度树V2.0法"，方法如下：
-如下图 (https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg) 左边的树结构，映射在数据库里的结构见右图表格，注意每个表格的最后一行必须有一个END标记，level设为0： 
+如下图 (https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemappingv2.png) 左边的树结构，映射在数据库里的结构见右图表格，注意每个表格的最后一行必须有一个END标记，level设为0： 
 ![image](treemappingv2.png)
 ```
 1.获取指定节点下所有子节点，已知节点的行号为X,level为Y, groupID为Z
