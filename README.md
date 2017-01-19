@@ -67,7 +67,56 @@ insert into tb (groupid,line,c4) values (2, 8,'T')
 5)占位符即为实际要显示的内容应出现的地方，方便编写Grid之类的表格显示控件  
 
 缺点有
-1)不是无限深度树，数据库最大允许列数有限制，通常最多为1000，这导致了树的深度不能超过1000，而且考虑到列数过多对性能也有影响, 使用时建议定一个比较小的深度限制例如100。
-2)SQL语句比较长，很多时候会出现c9=1 or c8=1  or c7=1 ... or c1=1这种n阶乘式的查询条件
-3)树的节点整体移动操作比较麻烦，需要将整个子树平移或上下称动，当节点须要经常移动时，不建议采用这种方案。对于一些只增减，不常移动节点的应用如论坛贴子和评论倒比较合适。
+1)不是无限深度树，数据库最大允许列数有限制，通常最多为1000，这导致了树的深度不能超过1000，而且考虑到列数过多对性能也有影响, 使用时建议定一个比较小的深度限制例如100。  
+2)SQL语句比较长，很多时候会出现c9=1 or c8=1  or c7=1 ... or c1=1这种n阶乘式的查询条件  
+3)树的节点整体移动操作比较麻烦，需要将整个子树平移或上下称动，当节点须要经常移动时，不建议采用这种方案。对于一些只增减，不常移动节点的应用如论坛贴子和评论倒比较合适。  
 4)列非常多时，空间占用有点大。  
+
+#==重要: 以下为追加内容，是在前述基础上，一种更简单的无限深度树方案==
+突然发现上面的方法还是太笨了，如果不用多列而是只用一个列来存储深度等级，则可以不受数据库列数限制，从而进化为无限深度树，虽然不再具有所见即所得的效果，但是在性能和简单性上要远远超过上述“简单粗暴多列存储法”，暂时给它取名"朱氏深度树V2.0法"，方法如下：
+如下图(https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg)左边的树结构，映射在数据库里的结构见右图表格，注意每个表格的最后一行必须有一个END标记，level设为0： 
+![image](treemappingv2.png)
+```
+1.获取指定节点下所有子节点，已知节点的行号为X,level为Y, groupID为Z
+select * from tb2 where groupID=Z and 
+  line>=X and line<(select min(line) from tb where line>X and level<=Y and groupID=Z)
+例如获取D节点及其所有子节点：
+select * from tb2 where groupID=1 and line>=7 and line< (select min(line) from tb2 where groupid=1 and line>7 and level<=2)
+删除和获取相似，只要将sql中select * 换成delete即可。
+
+仅获取D节点的次级所有子节点：(查询条件加一个level=Y+1即可)：
+select * from tb2 where groupID=1 and line>=7 and level=3 and line< (select min(line) from tb2 where groupid=1 and line>7 and level<=2) 
+
+2.查询任意节点的根节点, 已知节点的groupid为Z
+select * from tb2 where groupID=Z and line=1 (或level=1) 
+
+3.查询指定节点的上一级父节点, 已知节点的行号为X,level为Y, groupID为Z
+select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-1))
+例如查L节点的上一级父节点：
+select * from tb2 where groupID=1 and line=(select max(line) from tb2 where groupID=1 and line<11 and level=3) 
+
+3.查询指定节点的所有父节点, 已知节点的行号为"X",列名"cY":
+select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-1))
+union select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=(Y-2))
+...
+union select * from tb2 where groupID=Z and line=(select max(line) from tb2 where groupID=Z and line<X and level=1)
+例如查I节点的所有父节点：
+select * from tb2 where groupID=1 and line=(select max(line) from tb2 where groupID=1 and line<12 and level=2)
+union  select * from tb2 where groupID=1 and line=(select max(line) from tb2 where groupID=1 and line<12 and level=1)
+
+4.插入新节点：例如在J和K之间插入一个新节点T：
+update tb2 set line=line+1 where  groupID=1 and line>=10;
+insert into tb (groupid,line,id,level) values (1,10,'T',4);
+```
+
+总结：
+此方法优点有：  
+1）是无限深度树  
+2) 虽然不象第一种方案那样具有所见即所得的效果，但是依然具有直观易懂，方便调试的特点。   
+2）能充分利用SQL，查询、删除、插入非常方便，SQL比第一种方案简单多了，也没有用到like模糊查询语法。  
+3）只需要一张表。  
+4) 兼容所有数据库。   
+5) 点用空间小  
+
+缺点有:  
+1)树的节点整体移动操作有点麻烦, 适用于一些只增减，不常移动节点的场合如论坛贴子和评论等。当确实需要进行复杂的移动节点操作时，一种方案是在内存中进行整个树的操作并完成排序，操作完成后删除整个旧group再整体将新group一次性批量插入数据库。
