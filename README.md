@@ -8,7 +8,8 @@ Currently there are 4 common tree structure database storage patten, but they al
 3)Closure Table：Using another table to record path info, Advatage is easy to query and maintain, shortage is take too much space.  
 4)Nested Sets：Record Left and Right Nodes, Advatange is easy to query/delete/insert, shortage is too complex.  
 All of above patten has a same problem: not clearly show the whole tree structure in database.  
-Here I invented 2 new methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these methods before, maybe I did not spend enough time to search internet).  
+
+Here I designed 2 new methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these methods before, maybe I did not spend enough time to search internet).  
 
 ### Multiple-Columns-Tree
 This method is similar like "Path Enumerations" but not exact same. I give it a name "simple multiple colums tree" because it simply use lots of database columns to store a position mark (1 or null), see below picture((https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg):
@@ -60,20 +61,20 @@ Note: to avoid "update tb set line=line+1" lock all table lines in a transaction
 ```
 Summary of "Multiple-Columns-Tree"  
 Advatange:  
-1. Easy understand, the only patten can directly see the tree in database.  
-2. Can very few SQL do Query, Insert, delete operation  
+1. Easy understand, it's the only patten can directly see the tree structure in database.  
+2. Can use very few SQL do Query, Insert, delete operation  
 3. Only need 1 table  
 4. Fit all type database  
 
-Shortage:
-1. Has depth limitation because usually database allowed maximum column less than 1000, and for performance consideration, suggestion use this method within depth less than 100.
-2. Sql is very long, often need use 'c9=1 or c8=1  or c7=1 ... or c1=1'  like sql.
+Shortage:  
+1. Has depth limitation because usually database allowed maximum column less than 1000, and for performance consideration, suggestion use this method within depth less than 100.  
+2. Sql is very long, often need use 'c9=1 or c8=1  or c7=1 ... or c1=1'  like sql.  
 3. Hard to move nodes tree. Suitable for applications only often do increase/delete, very few moving nodes operations.
-4. Take too much database space
+4. Take too much database space  
 
 
 ### Sorted-Unlimitation-Depth-Tree
-To avoid the disadvantage of "Multiple-Columns-Tree" method, the improve is to use only one column instead of many columns to record the depth level, by this way now it has no limitation of depth level and much simpler than the first method, I give it a name "Sorted-Unlimitation-Depth-Tree" becaue it has no depth level limitation.  See below picture
+To avoid the disadvantage of "Multiple-Columns-Tree" method, the improvement is to use only one column instead of many columns to record the depth level, by this improve now it has no limitation of depth level and much simpler than the first method, I give it a name "Sorted-Unlimitation-Depth-Tree" becaue it has no depth limitation.  See below picture
 (https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemappingv2.png) , please note all nodes are categorized in group, each group has same groupid and with "END" tag at the end, the depth level of end tag set to "0":  
 ![image](treemappingv2.png)
 ```
@@ -128,7 +129,7 @@ Advatange：
 3. Easy do Sql query/delete/insert operation, Sql is much shorter and simpler than first method  
 4. Only need 1 table  
 5. Fit all type database  
-6. No take lots database space  
+6. Does not take much database space  
 
 Shortage:  
 1. Hard to move nodes tree. Suitable for applications only often do increase/delete, very few moving nodes operations.  
