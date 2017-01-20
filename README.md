@@ -1,4 +1,4 @@
-## Multiple-Columns-Tree & Sorted-Unlimitation-Depth-Tree
+## Multiple-Columns-Tree & Sorted-Unlimited-Depth-Tree
 A new solution for save hierarchical data (Tree structure) in Database  
 (For Chinese version see: README-中文版)
   
@@ -9,7 +9,7 @@ Currently there are 4 common tree structure database storage patten, but they al
 4)Nested Sets：Record Left and Right Nodes, Advatange is easy to query/delete/insert, shortage is too complex.  
 All of above patten has a same problem: not clearly show the whole tree structure in database.  
 
-Here I designed 2 new methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these methods before, maybe I did not spend enough time to search internet).  
+Here I designed 2 new methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these methods before, maybe I did not spend enough time to search on internet).  
 
 ### Multiple-Columns-Tree
 This method is similar like "Path Enumerations" but not exact same. I give it a name "simple multiple colums tree" because it simply use lots of database columns to store a position mark (1 or null), see below picture((https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg):
@@ -73,8 +73,8 @@ Shortage:
 4. Take too much database space  
 
 
-### Sorted-Unlimitation-Depth-Tree
-To avoid the disadvantage of "Multiple-Columns-Tree" method, the improvement is to use only one column instead of many columns to record the depth level, by this improve now it has no limitation of depth level and much simpler than the first method, I give it a name "Sorted-Unlimitation-Depth-Tree" becaue it has no depth limitation.  See below picture
+### Sorted-Unlimited-Depth-Tree
+To avoid the disadvantage of "Multiple-Columns-Tree" method, the improvement is to use only one column instead of many columns to record the depth level, by this improve now it has no limitation of depth level and much simpler than the first method, I give it a name "Sorted-Unlimited-Depth-Tree" becaue it has no depth level limitation.  See below picture
 (https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemappingv2.png) , please note all nodes are categorized in group, each group has same groupid and with "END" tag at the end, the depth level of end tag set to "0":  
 ![image](treemappingv2.png)
 ```
@@ -122,7 +122,7 @@ update tb2 set line=line+1 where  groupID=1 and line>=10;
 insert into tb (groupid,line,id,level) values (1,10,'T',4);
 ```
 
-Summary of "Sorted-Unlimitation-Depth-Tree"   
+Summary of "Sorted-Unlimited-Depth-Tree"   
 Advatange：  
 1. Has no depth level limitation  
 2. Simple, easy understand  
