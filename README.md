@@ -1,20 +1,20 @@
-# Multiple-Columns-Tree & Sorted-Unlimitation-Depth-Tree
+## Multiple-Columns-Tree & Sorted-Unlimitation-Depth-Tree
 A new solution for save hierarchical data (Tree structure) in Database  
 (For Chinese version see: README-中文版)
   
-Currently there are 4 common tree structure database storage patten, but they all have some problems:
-1)Adjacency List: Only record parent node. Advatage is simple, shortage is hard to access child nodes tree, need send lots SQL to database.
-2)Path Enumerations：Using a string to record path info. Advantage is easy to query, shortage is hard do insert operation, need modify lots path strings when insert a new record.
-3)Closure Table：Using another table to record path info, Advatage is easy to query and maintain, shortage is take too much space.
-4)Nested Sets：Record Left and Right Nodes, Advatange is easy to query/delete/insert, shortage is too complex.
-All of above patten has a same problem: not clearly show the whole tree structure in database.
-Here I invented 2 new methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these method before, maybe I did not spend enough time to search on internet).
+Currently there are 4 common tree structure database storage patten, but they all have some problems:  
+1)Adjacency List: Only record parent node. Advatage is simple, shortage is hard to access child nodes tree, need send lots SQL to database.  
+2)Path Enumerations：Using a string to record path info. Advantage is easy to query, shortage is hard do insert operation, need modify lots path strings when insert a new record.  
+3)Closure Table：Using another table to record path info, Advatage is easy to query and maintain, shortage is take too much space.  
+4)Nested Sets：Record Left and Right Nodes, Advatange is easy to query/delete/insert, shortage is too complex.  
+All of above patten has a same problem: not clearly show the whole tree structure in database.  
+Here I invented 2 new methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these methods before, maybe I did not spend enough time to search internet).  
 
-## Method1 
-I call it "simple multiple colums tree" patten, it's similar lie Path Enumerations patten, but not exactly same, the differenc is it use lots database columns to store a position mark (1 or null), see below picture((https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg):
+### Multiple-Columns-Tree
+This method is similar like "Path Enumerations" but not exact same. I give it a name "simple multiple colums tree" because it simply use lots of database columns to store a position mark (1 or null), see below picture((https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg):
 ![image](treemapping.jpg)
 
-line is a sorted number record the line code, column name is the depth of the node, "C1" means it's a root node.
+line is a sorted number record the current line (start from 1), column name is the depth of the node, "C1" means it's a root node.
 
 To access tree from database,  using below SQL:
 ```
@@ -51,29 +51,30 @@ union  select * from tb where line=(select max(line) from tb where line<12 and c
 5.Insert a new node, for example, insert a new node between J and K:
 update tb set line=line+1 where line>=10;
 insert into tb (line,id,c4) values (10,'T',1)
-Note: to avoid "update tb set line=line+1" lock all table, suggest add an "GroupID" column, all nodes within same root node share one groupID, for example:
-update tb set line=line+1 where groupid=2 and line>=8;
-insert into tb (groupid,line,c4) values (2, 8,'T')
-by this way can improve performance.
+Note: to avoid "update tb set line=line+1" lock all table lines in a transaction, suggest add an "GroupID" 
+      column to let all nodes within same root node share 1 same groupID, for example:
+        update tb set line=line+1 where groupid=2 and line>=8;
+        insert into tb (groupid,line,c4) values (2, 8,'T')
+      By this way can improve performance, each operation in a tree will not interfere other trees.
 
 ```
-Summary of method#1
-Advatange of "simple multiple colums tree" patten:
-1）Easy understand, the only patten can directly see the tree in database.  
-2）Can very few SQL do Query, Insert, delete operation
-3）Only need 1 table
-4) Fit all type database
+Summary of "Multiple-Columns-Tree"  
+Advatange:  
+1. Easy understand, the only patten can directly see the tree in database.  
+2. Can very few SQL do Query, Insert, delete operation  
+3. Only need 1 table  
+4. Fit all type database  
 
 Shortage:
-1) Has depth limitation because usually database allowed maximum column <1000, and for performance consideration, suggestion use this method within depth<100.
-2) Sql is long, often need use n! "c9=1 or c8=1  or c7=1 ... or c1=1" type sql.
-3) Hard to move nodes tree. Suitable for applications only often do increase/delete, very few moving nodes operations.
-4) Take too much database space
+1. Has depth limitation because usually database allowed maximum column less than 1000, and for performance consideration, suggestion use this method within depth less than 100.
+2. Sql is very long, often need use 'c9=1 or c8=1  or c7=1 ... or c1=1'  like sql.
+3. Hard to move nodes tree. Suitable for applications only often do increase/delete, very few moving nodes operations.
+4. Take too much database space
 
 
-## Method2
-To improve it, use only one column instead of using many columns to record the depth level, by this improvement, it has no limitation of depth level and much simpler than method1, I give it a name "Sorted-Unlimitation-Depth-Tree", see below picture
-(https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemappingv2.png) , please note all node are categorized in group, each group has a "END" tag with level value "0":
+### Sorted-Unlimitation-Depth-Tree
+To avoid the disadvantage of "Multiple-Columns-Tree" method, the improve is to use only one column instead of many columns to record the depth level, by this way now it has no limitation of depth level and much simpler than the first method, I give it a name "Sorted-Unlimitation-Depth-Tree" becaue it has no depth level limitation.  See below picture
+(https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemappingv2.png) , please note all nodes are categorized in group, each group has same groupid and with "END" tag at the end, the depth level of end tag set to "0":  
 ![image](treemappingv2.png)
 ```
 To access tree from database, using below SQL
@@ -120,15 +121,14 @@ update tb2 set line=line+1 where  groupID=1 and line>=10;
 insert into tb (groupid,line,id,level) values (1,10,'T',4);
 ```
 
-Summary of method#2
+Summary of "Sorted-Unlimitation-Depth-Tree"   
 Advatange：  
-1） Has no depth level limitation
-2） Simple, easy understand   
-3） Easier than method#1 to do SQL do query/delete/insert operation
-4） Only need 1 table
-5） Fit all type database
-6） Take very few database space
+1. Has no depth level limitation  
+2. Simple, easy understand  
+3. Easy do Sql query/delete/insert operation, Sql is much shorter and simpler than first method  
+4. Only need 1 table  
+5. Fit all type database  
+6. No take lots database space  
 
-缺点有:  
-Shortage:
-1) Hard to move nodes tree. Suitable for applications only often do increase/delete, very few moving nodes operations.
+Shortage:  
+1. Hard to move nodes tree. Suitable for applications only often do increase/delete, very few moving nodes operations.  
