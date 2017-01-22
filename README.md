@@ -140,4 +140,4 @@ Advatange：
 6. Does not take much database space  
 
 Shortage:  
-1. It's a little hard to move node or child tree (but still possible, see the example 6). It's best suitable for applications only often do query/insert/delete, very few moving nodes operations.  
+1. It's a little hard to move node or child tree (but still possible, see the example6), It's best suitable for applications only often do query/insert/delete, very few moving nodes operations.  
