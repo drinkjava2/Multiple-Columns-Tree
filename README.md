@@ -122,7 +122,7 @@ update tb2 set line=line+1 where  groupID=1 and line>=10;
 insert into tb (groupid,line,id,level) values (1,10,'T',4);
 
 6.Move node, this is little hard, for example, In MySQL, move whole B node tree to H node and between J and K:
-  (Note:Need add a new column "tempno" in table, and MySql does not support Row_Number, here use variant type in MySQL) 
+ (Note:Need add a new column "tempno" in table, and MySql does not support Row_Number, here use a variant type) 
 update tb2 set tempno=line*1000000 where groupid=1;
 set @nextNodeLine=(select min(line) from tb2 where groupid=1 and line>2 and level<=2);
 update tb2 set tempno=9*1000000+line, level=level+2 where groupID=1 and line>=2 and line< @nextNodeLine;
