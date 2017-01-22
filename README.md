@@ -120,6 +120,14 @@ union  select * from tb2 where groupID=1 and
 5.Insert a new node, for example, insert a new node between J and K:
 update tb2 set line=line+1 where  groupID=1 and line>=10;
 insert into tb (groupid,line,id,level) values (1,10,'T',4);
+
+6.Move node, this is little hard, for example, In MySQL, move whole B node tree to H node and between J and K:
+  (Note:Need add a new column "tempno" in table, and because MySql does not support Row_Number, here use variant type in MySQL) 
+update tb2 set tempno=line*1000000 where groupid=1;
+set @nextNodeLine=(select min(line) from tb2 where groupid=1 and line>2 and level<=2);
+update tb2 set tempno=9*1000000+line, level=level+2 where groupID=1 and line>=2 and line< @nextNodeLine;
+set @mycnt=0;
+update tb2 set line=(@mycnt := @mycnt + 1) where groupid=1 order by tempno;
 ```
 
 Summary of "Sorted-Unlimited-Depth-Tree"   
@@ -132,4 +140,4 @@ Advatange：
 6. Does not take much database space  
 
 Shortage:  
-1. Hard to move nodes tree. Suitable for applications only often do increase/delete, very few moving nodes operations.  
+1. It's a little hard to move node or child tree (but still possible, see the example 6). It's best suitable for applications only often do query/insert/delete, very few moving nodes operations.  
