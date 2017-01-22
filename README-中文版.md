@@ -116,9 +116,16 @@ union  select * from tb2 where groupID=1 and
 5.插入新节点：例如在J和K之间插入一个新节点T：
 update tb2 set line=line+1 where  groupID=1 and line>=10;
 insert into tb (groupid,line,id,level) values (1,10,'T',4);
+
+6.移动节点，这个有点麻烦，以下是一个比较笨的方法，用到了全表重新排序, 例如在MySQL下移动整个B节点树到H节点下，并位于J和K之间：
+update tb2 set tempno=line*1000000 where groupid=1;
+set @nextNodeLine=(select min(line) from tb2 where groupid=1 and line>2 and level<=2);
+update tb2 set tempno=9*1000000+line, level=level+2 where groupID=1 and line>=2 and line< @nextNodeLine;
+set @mycnt=0;
+update tb2 set line=(@mycnt := @mycnt + 1) where groupid=1 order by tempno;
 ```
 
-总结：
+总结：  
 此方法优点有：  
 1） 是无限深度树  
 2） 虽然不象第一种方案那样具有所见即所得的效果，但是依然具有直观易懂，方便调试的特点。   
@@ -128,4 +135,4 @@ insert into tb (groupid,line,id,level) values (1,10,'T',4);
 6） 占用空间小  
 
 缺点有:  
-1)树的节点整体移动操作有点麻烦, 适用于一些只增减，不常移动节点的场合如论坛贴子和评论等。当确实需要进行复杂的移动节点操作时，一种方案是在内存中进行整个树的操作并完成排序，操作完成后删除整个旧group再整体将新group一次性批量插入数据库。
+1)树的节点移动操作有点麻烦(但不是不可能, 见示例6）, 适用于一些只增减，不常移动节点的场合如论坛贴子和评论等。当确实需要频繁地进行复杂的移动节点操作时，还有一种方法是在内存中进行整个树的操作并排序，操作完成后删除整个旧group再整体将新group一次性批量插入数据库。
