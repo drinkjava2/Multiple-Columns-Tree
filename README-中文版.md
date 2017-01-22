@@ -118,6 +118,7 @@ update tb2 set line=line+1 where  groupID=1 and line>=10;
 insert into tb (groupid,line,id,level) values (1,10,'T',4);
 
 6.移动节点，这个有点麻烦，以下是一个比较笨的方法，用到了全表重新排序, 例如在MySQL下移动整个B节点树到H节点下，并位于J和K之间：
+  （注：需要在表中新增一个名为tempno的整数类型列, 因MySql不支持行号，这个示例中用到了MySQL的自定义类型）
 update tb2 set tempno=line*1000000 where groupid=1;
 set @nextNodeLine=(select min(line) from tb2 where groupid=1 and line>2 and level<=2);
 update tb2 set tempno=9*1000000+line, level=level+2 where groupID=1 and line>=2 and line< @nextNodeLine;
