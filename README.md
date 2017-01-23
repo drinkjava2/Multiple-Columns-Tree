@@ -1,15 +1,14 @@
-## Multiple-Columns-Tree & Sorted-Unlimited-Depth-Tree
-A new solution for save hierarchical data (Tree structure) in Database  
-(For Chinese version see: README-中文版)
-  
+(For Chinese version please see: README-中文版)
+### Multiple-Columns-Tree / Sorted-Unlimited-Depth-Tree / Sorted-Adjacency-List-Tree  
+3 solutions for save hierarchical data (Tree structure) in Database  
+ 
 Currently there are 4 common tree structure database storage patten, but they all have some problems:  
 1)Adjacency List: Only record parent node. Advatage is simple, shortage is hard to access child nodes tree, need send lots SQL to database.  
 2)Path Enumerations：Using a string to record path info. Advantage is easy to query, shortage is hard do insert operation, need modify lots path strings when insert a new record.  
 3)Closure Table：Using another table to record path info, Advatage is easy to query and maintain, shortage is take too much space.  
 4)Nested Sets：Record Left and Right Nodes, Advatange is easy to query/delete/insert, shortage is too complex.  
 All of above patten has a same problem: not clearly show the whole tree structure in database.  
-
-Here I designed 2 new methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these methods before, maybe I did not spend enough time to search on internet).  
+Here I invented 3 methods to store hierarchical data (Tree structure) in Database (Note: I'm not sure if someone else already invented these methods before because I did not spend lots time to search on internet).  
 
 ### Multiple-Columns-Tree
 This method is similar like "Path Enumerations" but not exact same. I give it a name "simple multiple colums tree" because it simply use lots of database columns to store a position mark (1 or null), see below picture((https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg):
@@ -141,3 +140,56 @@ Advatange：
 
 Shortage:  
 1. It's a little hard to move node or child tree (but still possible, see the example6), It's best suitable for applications only often do query/insert/delete, very few moving nodes operations.  
+
+### Sorted-Adjacency-List-Tree
+To make moving/add/delete node easire, here is another mode join "Sorted-Unlimited-Depth-Tree" + "Adjacency List" together by increase 3 extra column "pid", "tempno" and "temporder", I call it "Sorted-Adjacency-List-Tree" mode, each time after node be moved (by simply changing the pid), need do a re-sort procedure. Below is an example show how to swith "Adjacency List" mode to "Sorted-Unlimited-Depth-Tree" mode by a re-sort operation:  
+![image](treemappingv3.png)
+```
+create table tb3 (
+id varchar(10),
+comments varchar(55),
+pid varchar(10),
+line integer,
+level integer,
+tempno bigint,
+temporder integer
+)
+
+insert into tb3 (id,comments,Pid) values('A','found a bug',null);
+insert into tb3 (id,comments,Pid) values('B','is a worm','A');
+insert into tb3 (id,comments,Pid) values('C','no','A');
+insert into tb3 (id,comments,Pid) values('D','is a bug','A');
+insert into tb3 (id,comments,Pid) values('E','oh, a bug','B');
+insert into tb3 (id,comments,Pid) values('F','solve it','B');
+insert into tb3 (id,comments,Pid) values('G','careful it bites','C');
+insert into tb3 (id,comments,Pid) values('H','it does not bit','D');
+insert into tb3 (id,comments,Pid) values('I','found the reason','D');
+insert into tb3 (id,comments,Pid) values('J','solved','H');
+insert into tb3 (id,comments,Pid) values('K','uploaded','H');
+insert into tb3 (id,comments,Pid) values('L','well done!','H');
+
+set @mycnt=0;
+update tb3 set  line=0,level=0, tempno=0, temporder=(@mycnt := @mycnt + 1) order by id;
+update tb3 set level=1, line=1 where pid is null;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=2, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=1;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=3, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=2;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=4, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=3;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+```
+To make the example short, I deleted the groupid column and end tag, and assume only has 1 root node.  
+Advantage of "Sorted-Adjacency-List-Tree" is: easy do complicated node modification operation (add/delete/moving), easy do SQL query.  
+Shortage is: Each time after did node modification operation, need make a re-sort operation, it works like make a index to make quick SQL query possible.  
