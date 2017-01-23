@@ -192,4 +192,4 @@ update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
 ```
 To make the example short, I deleted the groupid column and end tag, and assume only has 1 root node.  
 Advantage of "Sorted-Adjacency-List-Tree" is: easy do complicated node modification operation (add/delete/moving), easy do SQL query.  
-Shortage is: Each time after did node modification operation, need make a re-sort operation, it works like make a index to make quick SQL query possible.  
+Shortage is: Each time after did node modification operation, need make a re-sort operation, it works like make a index for database table.
