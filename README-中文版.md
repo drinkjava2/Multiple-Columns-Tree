@@ -1,7 +1,4 @@
-# Multiple-Columns-Tree
-A new solution for save hierarchical data (Tree structure) in Database
-一种新的树结构数据库存储方案
-
+## Multiple-Columns-Tree(深度树V1.0)
 最近在开发jSqlBox过程中，研究树形结构的操作，突然发现一种新的树结构数据库存储方案，在网上找了一下，没有找到雷同的（也可能是花的时间不够），现介绍如下:
 目前常见的树形结构数据库存储方案有以下四种，但是都存在一定问题:  
 1)Adjacency List:：记录父节点。优点是简单，缺点是访问子树需要遍历，发出许多条SQL，对数据库压力大。  
@@ -9,7 +6,7 @@ A new solution for save hierarchical data (Tree structure) in Database
 3)Closure Table：专门一张表维护Path，缺点是占用空间大，操作不直观。  
 4)Nested Sets：记录左值和右值，缺点是复杂难操作。  
 以上方法都存在一个共同缺点：操作不直观，不能直接看到树结构，不利于开发和调试。  
-本文介绍的方法我暂称它为“简单粗暴多列存储法”，它与Path Enumerations有点类似，但区别是用很多的数据库列来存储一个占位符(1或空值)，如下图(https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg) 左边的树结构，映射在数据库里的结构见右图表格：  
+本文介绍的方法我暂称它为“简单粗暴多列存储法”或称"深度树V1.0"，它与Path Enumerations有点类似，但区别是用很多的数据库列来存储一个占位符(1或空值)，如下图(https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping.jpg) 左边的树结构，映射在数据库里的结构见右图表格：  
 ![image](treemapping.jpg)
 
 各种SQL操作如下：
@@ -72,8 +69,9 @@ insert into tb (groupid,line,c4) values (2, 8,'T')
 3)树的节点整体移动操作比较麻烦，需要将整个子树平移或上下称动，当节点须要经常移动时，不建议采用这种方案。对于一些只增减，不常移动节点的应用如论坛贴子和评论倒比较合适。  
 4)列非常多时，空间占用有点大。  
 
-##以下为追加内容，是在前述基础上，一种更简单的无限深度树方案
-突然发现上面的方法还是太笨了，如果不用多列而是只用一个列来存储深度等级，则可以不受数据库列数限制，从而进化为无限深度树，虽然不再具有所见即所得的效果，但是在性能和简单性上要远远超过上述“简单粗暴多列存储法”，暂时给它取名"朱氏深度树V2.0法"，方法如下：
+## Sorted-Unlimited-Depth-Tree(深度树V2.0)
+以下为追加内容，是在前述基础上，一种更简单的无限深度树方案
+突然发现上面的方法还是太笨了，如果不用多列而是只用一个列来存储深度等级，则可以不受数据库列数限制，从而进化为无限深度树，虽然不再具有所见即所得的效果，但是在性能和简单性上要远远超过上述“简单粗暴多列存储法”，暂称其为"深度树V2.0"，方法如下：
 如下图 (https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemappingv2.png) 左边的树结构，映射在数据库里的结构见右图表格，注意每个表格的最后一行必须有一个END标记，level设为0： 
 ![image](treemappingv2.png)
 ```
@@ -125,7 +123,6 @@ update tb2 set tempno=9*1000000+line, level=level+2 where groupID=1 and line>=2 
 set @mycnt=0;
 update tb2 set line=(@mycnt := @mycnt + 1) where groupid=1 order by tempno;
 ```
-
 总结：  
 此方法优点有：  
 1） 是无限深度树  
@@ -137,3 +134,59 @@ update tb2 set line=(@mycnt := @mycnt + 1) where groupid=1 order by tempno;
 
 缺点有:  
 1)树的节点移动操作有点麻烦(但不是不可能, 见示例6）, 适用于一些只增减，不常移动节点的场合如论坛贴子和评论等。当确实需要频繁地进行复杂的移动节点操作时，还有一种方法是在内存中进行整个树的操作并排序，操作完成后删除整个旧group再整体将新group一次性批量插入数据库。
+
+## Sorted-Adjacency-List-Tree (深度树V3.0)
+2017年1月22日补充：
+如果需要频繁移动节点的场合，又想保留方案2高效查询的优点，还有一种方案就是再添加一个父节点pid字段和两个辅助字段tempno和temporder用于排序，(暂时称其为“深度树V3.0"), 这样相当于V2.0法和Adjacency List模式的合并了，优点是每次移动节点，只需要更改PID即可，不需要复杂的算法，一次可以任意移动、增加、删除多个节点，最后统一调用以下算法简单地进行一下重排序即可，下面这个示例完整演示了一个Adjacency List模式到V2.0模式的转换，这相当于一个重新给树建查询索引的过程：  
+![image](treemappingv3.png)
+```
+create table tb3 (
+id varchar(10),
+comments varchar(55),
+pid varchar(10),
+line integer,
+level integer,
+tempno bigint,
+temporder integer
+)
+
+insert into tb3 (id,comments,Pid) values('A','found a bug',null);
+insert into tb3 (id,comments,Pid) values('B','is a worm','A');
+insert into tb3 (id,comments,Pid) values('C','no','A');
+insert into tb3 (id,comments,Pid) values('D','is a bug','A');
+insert into tb3 (id,comments,Pid) values('E','oh, a bug','B');
+insert into tb3 (id,comments,Pid) values('F','solve it','B');
+insert into tb3 (id,comments,Pid) values('G','careful it bites','C');
+insert into tb3 (id,comments,Pid) values('H','it does not bit','D');
+insert into tb3 (id,comments,Pid) values('I','found the reason','D');
+insert into tb3 (id,comments,Pid) values('J','solved','H');
+insert into tb3 (id,comments,Pid) values('K','uploaded','H');
+insert into tb3 (id,comments,Pid) values('L','well done!','H');
+
+set @mycnt=0;
+update tb3 set  line=0,level=0, tempno=0, temporder=(@mycnt := @mycnt + 1) order by id;
+update tb3 set level=1, line=1 where pid is null;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=2, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=1;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=3, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=2;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=4, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=3;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+```
+以上算法利用了SQL的功能，将原来可能需要非常多SQL递归查询的过程转变成了有限次数(=树最大深度)的SQL操作，为了突出算法，以上示例假设只有一个根节点,删除了groupid和endtag，实际使用中要完善一下这个细节, order by id也可改成以其它字段排序。因时间关系我就不给出V2.0模式到Adjacency List模式逆推的算法了（也即pid为空，根据V2.0表格倒过来给pid赋值的过程），不过这个算法倒不重要，因为通常v3.0表中每一行会一直保存着一个pid)。  
+总结一下：  
+Adjacency List模式:移/增/删节点方便，查询不方便  
+深度树V2.0模式:查询方便，增/删节点方便，但存在效率问题，移动节点不方便  
+深度树V3.0模式:移/增/删节点方便，查询方便，缺点是每次移/增/删节点后要重建line和level值以供查询用。它是结合了上两种模式的合并体，并可以根据侧重，随时在这两种模式(修改模式和查询模式)间切换。v3.0法相当于给Adjacency List模式设计了一个查询索引。 
