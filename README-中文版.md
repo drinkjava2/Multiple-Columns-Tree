@@ -1,7 +1,7 @@
 ## Multiple-Columns-Tree(深度树V1.0)
 最近在开发jSqlBox过程中，研究树形结构的操作，突然发现一种新的树结构数据库存储方案，在网上找了一下，没有找到雷同的（也可能是花的时间不够），现介绍如下:
 目前常见的树形结构数据库存储方案有以下四种，但是都存在一定问题:  
-1)Adjacency List:：记录父节点。优点是简单，缺点是访问子树需要遍历，发出许多条SQL，对数据库压力大。(补充：有的数据库本身支持递归查询，只需要一句SQL即可，但对于数据量大且树结构很深的情况，依然可能有性能问题）。
+1)Adjacency List:：记录父节点。优点是简单，缺点是访问子树需要遍历，发出许多条SQL，对数据库压力大。(补充：有的数据库本身支持递归查询，只需要一句SQL即可，但对于数据量大且树结构很深的情况，依然可能有性能问题）。  
 2)Path Enumerations：用一个字符串记录整个路径。优点是查询方便，缺点是插入新记录时要手工更改此节点以下所有路径，很容易出错。  
 3)Closure Table：专门一张表维护Path，缺点是占用空间大，操作不直观。  
 4)Nested Sets：记录左值和右值，缺点是复杂难操作。  
@@ -150,18 +150,18 @@ tempno bigint,
 temporder integer
 )
 
-insert into tb3 (id,comments,Pid) values('A','found a bug',null);
-insert into tb3 (id,comments,Pid) values('B','is a worm','A');
-insert into tb3 (id,comments,Pid) values('C','no','A');
-insert into tb3 (id,comments,Pid) values('D','is a bug','A');
-insert into tb3 (id,comments,Pid) values('E','oh, a bug','B');
-insert into tb3 (id,comments,Pid) values('F','solve it','B');
-insert into tb3 (id,comments,Pid) values('G','careful it bites','C');
-insert into tb3 (id,comments,Pid) values('H','it does not bit','D');
-insert into tb3 (id,comments,Pid) values('I','found the reason','D');
-insert into tb3 (id,comments,Pid) values('J','solved','H');
-insert into tb3 (id,comments,Pid) values('K','uploaded','H');
-insert into tb3 (id,comments,Pid) values('L','well done!','H');
+insert into treetest (id,comments,Pid) values('A','found a bug',null);
+insert into treetest (id,comments,Pid) values('B','is a worm?','A');
+insert into treetest (id,comments,Pid) values('E','no','B');
+insert into treetest (id,comments,Pid) values('F','is a bug','B');
+insert into treetest (id,comments,Pid) values('C','oh, a bug','A');
+insert into treetest (id,comments,Pid) values('G','need solve it','C');
+insert into treetest (id,comments,Pid) values('D','careful it bites','A');
+insert into treetest (id,comments,Pid) values('H','it does not bite','D');
+insert into treetest (id,comments,Pid) values('J','found the reason','H');
+insert into treetest (id,comments,Pid) values('K','solved','H');
+insert into treetest (id,comments,Pid) values('L','uploaded','H');
+insert into treetest (id,comments,Pid) values('I','well done!','D');
 
 set @mycnt=0;
 update tb3 set  line=0,level=0, tempno=0, temporder=(@mycnt := @mycnt + 1) order by id;
@@ -189,4 +189,5 @@ update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
 总结一下：  
 Adjacency List模式:移/增/删节点方便，查询不方便  
 深度树V2.0模式:查询方便，增/删节点方便，但存在效率问题，移动节点不方便  
-深度树V3.0模式:移/增/删节点方便，查询方便，缺点是每次移/增/删节点后要重建line和level值以供查询用。它是结合了上两种模式的合并体，并可以根据侧重，随时在这两种模式(修改模式和查询模式)间切换。v3.0法相当于给Adjacency List模式设计了一个查询索引。 
+深度树V3.0模式:移/增/删节点方便，查询方便，缺点是每次移/增/删节点后要重建line和level值以供查询用。它是结合了上两种模式的合并体，并可以根据侧重，随时在这两种模式(修改模式和查询模式)间切换。v3.0法相当于给Adjacency List模式设计了一个查询索引。  
+综上，本文介绍的方法(V2.0/V3.0法)最适用的场合为：数据量比较大、对查询性能要求极高、通常只有追加操作，很少做插入和删除操作，基本没有移动节点操作。
