@@ -191,3 +191,41 @@ Adjacency List模式:移/增/删节点方便，查询不方便
 深度树V2.0模式:查询方便，增/删节点方便，但存在效率问题，移动节点不方便  
 深度树V3.0模式:移/增/删节点方便，查询方便，缺点是每次移/增/删节点后要重建line和level值以供查询用。它是结合了上两种模式的合并体，并可以根据侧重，随时在这两种模式(修改模式和查询模式)间切换。v3.0法相当于给Adjacency List模式设计了一个查询索引。  
 综上，本文介绍的方法(V2.0/V3.0法)最适用的场合为：数据量比较大、对查询性能要求极高、通常只有追加操作，很少做插入和删除操作，基本没有移动节点操作。
+
+2018-10-25追加：
+给它起个中文名叫"海底捞"算法，以下是这个算法在MongoDb中的参考实现：
+
+```
+
+Books
+|-Programning
+| |-Languages
+| |-Databases
+| | |-MongoDB
+| | | |-MongoTree
+| | |-dbm
+|-Arts
+
+db.book.insert({ _id: “Books”, line:1000,level:1} );
+db.book.insert({ _id: “Programming”, line:2000,level:2} );
+db.book.insert({ _id: “Languages”, line:3000,level:3} );
+db.book.insert({ _id: “Databases”, line:4000,level:3} );
+db.book.insert({ _id: “MongoDB”, line:5000,level:4} );
+db.book.insert({ _id: “MongoTree”, line:6000,level:5} );
+db.book.insert({ _id: “dbm”, line:7000,level:4} );
+db.book.insert({ _id: “Arts”, line:8000,level:2} );
+db.book.insert({ _id: “EndTag”, line:10000,level:0} );
+
+//查询节点 “Databases”下的所有子节点:
+db.book.createIndex( {line:1});
+var node = db.book.findOne( { _id: “Databases” } );
+var next=db.book.findOne( { $and: [ {line: {$gt:node.line}}, {level:{$lte: node.level }}] } );
+db.book.find( {$and: [{line: { $gt: node.line }}, {line: { $lt: next.line }}] } );
+
+//插入一个新节点，不需要对其它行执行加1操作，因为这个示例中行号是跳号设计的，节点可以插入在两个行号的中间
+db.book.insert({ _id: “MySql”, line:6500,level:5} );
+
+//删除一个节点，真接删就可以了
+db.book.remove({ _id: “Languages”} );
+
+```
