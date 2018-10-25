@@ -193,3 +193,39 @@ update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
 To make the example short, I deleted the groupid column and end tag, and assume only has 1 root node.  
 Advantage of "Sorted-Adjacency-List-Tree" is: easy do complicated node modification operation (add/delete/moving), easy do SQL query.  
 Shortage is: Each time after did node modification operation, need make a re-sort operation, it works like make a index for database table.
+
+2018-10-25 Append:
+A demo implementation in MongoDB:
+```
+Books
+|-Programning
+| |-Languages
+| |-Databases
+| |-MongoDB
+| | |-MongoTree
+| |-dbm
+|-Arts
+
+db.book.insert({ _id: “Books”, line:1000,level:1} );
+db.book.insert({ _id: “Programming”, line:2000,level:2} );
+db.book.insert({ _id: “Languages”, line:3000,level:3} );
+db.book.insert({ _id: “Databases”, line:4000,level:3} );
+db.book.insert({ _id: “MongoDB”, line:5000,level:4} );
+db.book.insert({ _id: “MongoTree”, line:6000,level:5} );
+db.book.insert({ _id: “dbm”, line:7000,level:4} );
+db.book.insert({ _id: “Arts”, line:8000,level:2} );
+db.book.insert({ _id: “EndTag”, line:10000,level:0} );
+
+//Query child tree for node “Databases”:
+db.book.createIndex( {line:1});
+var node = db.book.findOne( { _id: “Databases” } );
+var next=db.book.findOne( { $and: [ {line: {$gt:node.line}}, {level:{$lte: node.level }}] } );
+db.book.find( {$and: [{line: { $gt: node.line }}, {line: { $lt: next.line }}] } );
+
+//Insert a new node, no need modify other nodes:
+db.book.insert({ _id: “MySql”, line:6500,level:5} );
+
+//Remove a node, no need modify other nodes:
+db.book.remove({ _id: “Languages”} );
+
+```
