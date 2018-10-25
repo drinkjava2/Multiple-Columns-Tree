@@ -6,8 +6,8 @@
 3)Closure Table(闭包表)：专门一张表维护Path，缺点是占用空间大，操作不直观。
 4)Nested Sets (嵌套集)：记录左值和右值，优点是查询子树无需递归，缺点是非常复杂、难操作。
 
-本文介绍的基于树形结构的前序遍历序列方法，示意图如下((https://github.com/drinkjava2/Multiple-Columns-Tree/blob/master/treemapping2.jpg):
-![image](treemapping2.jpg)
+本文介绍的基于树形结构的前序遍历序列方法，示意图如下((https://raw.githubusercontent.com/drinkjava2/Multiple-Columns-Tree/master/treemappingv2.png):
+![image](https://raw.githubusercontent.com/drinkjava2/Multiple-Columns-Tree/master/treemappingv2.png)
 
 
 如上图左边的树结构，映射在数据库里的结构见右图表格，注意整个表格是一个排好序的树结构的前序遍历序列,相同节点深度的排序以line为准。 表格的最后一行(或每个根节点)必须有一个END标记，level设为0，上表中的ID为主键，Level为树节点的深度。在以上基础上，只要一句SQL,就可以无递归查询出任意节点的所有子树节点, 比某些数据自带的基于递归原理的查询更高效。 假设节点的行号为X,level为Y,则查询整个子树的SQL为: 
