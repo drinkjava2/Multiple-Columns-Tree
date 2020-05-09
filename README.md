@@ -145,6 +145,8 @@ Shortage:
 To make moving/add/delete node easire, here is another mode join "Sorted-Unlimited-Depth-Tree" + "Adjacency List" together by increase 3 extra column "pid", "tempno" and "temporder", I call it "Sorted-Adjacency-List-Tree" mode, each time after node be moved (by simply changing the pid), need do a re-sort procedure. Below is an example show how to swith "Adjacency List" mode to "Sorted-Unlimited-Depth-Tree" mode by a re-sort operation:  
 ![image](treemappingv3.png)
 ```
+drop table if exists tb3;
+
 create table tb3 (
 id varchar(10),
 comments varchar(55),
@@ -153,20 +155,20 @@ line integer,
 level integer,
 tempno bigint,
 temporder integer
-)
+);
 
 insert into tb3 (id,comments,Pid) values('A','found a bug',null);
-insert into tb3 (id,comments,Pid) values('B','is a worm','A');
-insert into tb3 (id,comments,Pid) values('C','no','A');
-insert into tb3 (id,comments,Pid) values('D','is a bug','A');
-insert into tb3 (id,comments,Pid) values('E','oh, a bug','B');
-insert into tb3 (id,comments,Pid) values('F','solve it','B');
-insert into tb3 (id,comments,Pid) values('G','careful it bites','C');
-insert into tb3 (id,comments,Pid) values('H','it does not bit','D');
-insert into tb3 (id,comments,Pid) values('I','found the reason','D');
-insert into tb3 (id,comments,Pid) values('J','solved','H');
-insert into tb3 (id,comments,Pid) values('K','uploaded','H');
-insert into tb3 (id,comments,Pid) values('L','well done!','H');
+insert into tb3 (id,comments,Pid) values('B','is a worm?','A');
+insert into tb3 (id,comments,Pid) values('E','no','B');
+insert into tb3 (id,comments,Pid) values('F','is a bug','B');
+insert into tb3 (id,comments,Pid) values('C','oh, a bug','A');
+insert into tb3 (id,comments,Pid) values('G','need solve it','C');
+insert into tb3 (id,comments,Pid) values('D','careful it bites','A');
+insert into tb3 (id,comments,Pid) values('H','it does not bite','D');
+insert into tb3 (id,comments,Pid) values('J','found the reason','H');
+insert into tb3 (id,comments,Pid) values('K','solved','H');
+insert into tb3 (id,comments,Pid) values('L','uploaded','H');
+insert into tb3 (id,comments,Pid) values('I','well done!','D');
 
 set @mycnt=0;
 update tb3 set  line=0,level=0, tempno=0, temporder=(@mycnt := @mycnt + 1) order by id;
@@ -185,8 +187,8 @@ set @mycnt=0;
 update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
 
 update tb3 set tempno=line*10000000 where line>0; 
-update tb3 a, tb3 b set a.level=4, a.tempno=b.tempno+a.temporder where a.level=0 and 
-a.pid=b.id and b.level=3;
+update tb3 a, tb3 b set a.level=4, a.tempno=b.tempno+a.temporder where a.level=0 and
+ a.pid=b.id and b.level=3;
 set @mycnt=0;
 update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
 ```
