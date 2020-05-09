@@ -192,12 +192,15 @@ update tb3 a, tb3 b set a.level=4, a.tempno=b.tempno+a.temporder where a.level=0
 set @mycnt=0;
 update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
 ```
+Below is the Gif picture show the transfer procedure tested on MySql:
+![transfer.gif](transfer.gif)
+
 To make the example short, I deleted the groupid column and end tag, and assume only has 1 root node.  
 Advantage of "Sorted-Adjacency-List-Tree" is: easy do complicated node modification operation (add/delete/moving), easy do SQL query.  
 Shortage is: Each time after did node modification operation, need make a re-sort operation, it works like make a index for database table.
 
-2018-10-25 Append:
-A demo implementation in MongoDB:
+### In MongoDB
+2018-10-25 Append: A demo implementation in MongoDB:
 ```
 Books
 |-Programning
