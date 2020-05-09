@@ -31,7 +31,61 @@ insert into tb (line,id,level) values (10,'T',4); //执行插入新节点操作
 本文实际上可以抽象成一种利用前序遍历给多叉树建查询索引的方案，即使在没有数据库存在的情况下，也是有可能在程序中应用到这种方案的，只要将SQL中的查询功能改成手工进行数组遍历即可。
 另外，数据库开发者也可以考虑，对于邻接表模式(即只有id和pid两个关键字段)存储的树结构, 可以用这种方法创建一个内部索引，将level和line作为数据库表的隐藏字段，这样用户就可以不用手工维护level、line以及维护前序遍历排序这些与业务无关的操作，这才是最人性化的使用方式。
 
-2018-10-25追加：海底捞"算法在MongoDb中的参考实现：
+### 转换邻接表模式到深度树模式：
+可以利用SQL巧妙地将邻接表模式转换为深度树模式（即给邻接表树添加查询索引），SQL执行次数仅与树的最大深度有关，与数据量无关，以下是一个MySql示例：
+```
+drop table if exists tb3;
+
+create table tb3 (
+id varchar(10),
+comments varchar(55),
+pid varchar(10),
+line integer,
+level integer,
+tempno bigint,
+temporder integer
+);
+
+insert into tb3 (id,comments,Pid) values('A','found a bug',null);
+insert into tb3 (id,comments,Pid) values('B','is a worm?','A');
+insert into tb3 (id,comments,Pid) values('E','no','B');
+insert into tb3 (id,comments,Pid) values('F','is a bug','B');
+insert into tb3 (id,comments,Pid) values('C','oh, a bug','A');
+insert into tb3 (id,comments,Pid) values('G','need solve it','C');
+insert into tb3 (id,comments,Pid) values('D','careful it bites','A');
+insert into tb3 (id,comments,Pid) values('H','it does not bite','D');
+insert into tb3 (id,comments,Pid) values('J','found the reason','H');
+insert into tb3 (id,comments,Pid) values('K','solved','H');
+insert into tb3 (id,comments,Pid) values('L','uploaded','H');
+insert into tb3 (id,comments,Pid) values('I','well done!','D');
+
+set @mycnt=0;
+update tb3 set  line=0,level=0, tempno=0, temporder=(@mycnt := @mycnt + 1) order by id;
+update tb3 set level=1, line=1 where pid is null;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=2, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=1;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=3, a.tempno=b.tempno+a.temporder where a.level=0 and 
+a.pid=b.id and b.level=2;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+
+update tb3 set tempno=line*10000000 where line>0; 
+update tb3 a, tb3 b set a.level=4, a.tempno=b.tempno+a.temporder where a.level=0 and
+ a.pid=b.id and b.level=3;
+set @mycnt=0;
+update tb3 set line=(@mycnt := @mycnt + 1) where level>0 order by tempno;
+```
+下图是在MySql上实际运行转换的截图：
+![transfer.gif](transfer.gif)
+
+### MongoDb上的实现
+2018-10-25追加：深度树(“海底捞”)算法在MongoDb中的参考实现：
 
 ```
 
